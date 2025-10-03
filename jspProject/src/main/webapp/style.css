@@ -71,3 +71,71 @@ input {
 .invalid {
   border: 1px solid red;
 }
+
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0; padding: 0;
+    background: #f4f4f4;
+}
+
+/* 🔹 Search Bar */
+.search-bar {
+    background: #003366;
+    color: white;
+    padding: 10px;
+    text-align: center;
+}
+.search-bar input, 
+.search-bar select, 
+.search-bar button {
+    margin: 5px;
+    padding: 8px;
+}
+.search-bar button {
+    background: #ff6600;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+.search-bar button:hover {
+    background: #cc5200;
+}
+
+/* 🔹 Dashboard Layout */
+.dashboard {
+    display: flex;
+}
+
+/* Filters */
+.filters {
+    width: 25%;
+    background: #fff;
+    padding: 15px;
+    border-right: 1px solid #ccc;
+}
+
+/* Results */
+.results {
+    width: 75%;
+    padding: 15px;
+}
+.train-card {
+    background: #fff;
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+.train-card button {
+    margin: 5px;
+    padding: 8px 15px;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 3px;
+}
+.train-card button:hover {
+    background: #0056b3;
+}

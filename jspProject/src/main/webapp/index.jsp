@@ -34,8 +34,9 @@
 <span class="error" id="passwordError"></span><br>
 
 <input type="submit" value="Register">
+<a href="login.jsp">Already a user </a>
 </form>
 
-<script src="script.js"></script>
+<script src="script.js"></script> 
 </body>
 </html>
