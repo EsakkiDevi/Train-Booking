@@ -1,131 +1,103 @@
 <%@ page import="java.util.List" %>
 <%@ page import="model.Station" %>
+<%@ page import="dao.Stationsdao" %>
+<%@ page import="model.Train" %>
 <%@ page session="true" %>
 <%
+    // Session check
     String username = (String) session.getAttribute("username");
     if(username == null){
         response.sendRedirect("login.jsp");
         return;
     }
 
-    List<Station> stations = (List<Station>) request.getAttribute("stations");
+    // Fetch all stations for dropdown
+    Stationsdao sdao = new Stationsdao();
+    List<Station> stations = sdao.getAllStations();
+
+    // Fetch trains if search submitted
+    List<Train> trains = (List<Train>) request.getAttribute("trains");
 %>
 
 <html>
 <head>
     <title>Train Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h2 { text-align: center; }
+        .search-bar { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+        select, input[type="date"] { padding: 6px; font-size: 14px; max-height: 150px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        table th, table td { padding: 10px; text-align: center; border: 1px solid #ccc; }
+        button { padding: 5px 10px; cursor: pointer; }
+    </style>
 </head>
 <body>
+
 <h2>Hello, <%= username %>! Search Trains</h2>
 
-<!-- From station input + dropdown -->
-<input list="fromList" id="fromStation" placeholder="From" oninput="fetchTrains()"/>
-<datalist id="fromList">
-<% if(stations != null){
-       for(Station s : stations){ %>
-    <option value="<%= s.getName() %> - <%= s.getCity() %>"></option>
-<% } } %>
-</datalist>
+<!-- Search Form -->
+<form method="get" action="TrainServlet" class="search-bar">
+    <!-- From Station -->
+    <select name="from" required>
+        <option value="">--Select Source--</option>
+        <% for(Station s : stations) { %>
+            <option value="<%= s.getCode() %>" 
+                <%= (request.getParameter("from") != null && request.getParameter("from").equals(s.getCode())) ? "selected" : "" %>>
+                <%= s.getName() %> - <%= s.getCode() %>
+            </option>
+        <% } %>
+    </select>
 
-<!-- To station input + dropdown -->
-<input list="toList" id="toStation" placeholder="To" oninput="fetchTrains()"/>
-<datalist id="toList">
-<% if(stations != null){
-       for(Station s : stations){ %>
-    <option value="<%= s.getName() %> - <%= s.getCity() %>"></option>
-<% } } %>
-</datalist>
+    <!-- To Station -->
+    <select name="to" required>
+        <option value="">--Select Destination--</option>
+        <% for(Station s : stations) { %>
+            <option value="<%= s.getCode() %>" 
+                <%= (request.getParameter("to") != null && request.getParameter("to").equals(s.getCode())) ? "selected" : "" %>>
+                <%= s.getName() %> - <%= s.getCode() %>
+            </option>
+        <% } %>
+    </select>
 
-<!-- Date picker -->
-<input type="date" id="travelDate" onchange="fetchTrains()" min="<%= java.time.LocalDate.now() %>"/>
+    <!-- Travel Date -->
+    <input type="date" name="date" value="<%= request.getParameter("date") != null ? request.getParameter("date") : "" %>" 
+           min="<%= java.time.LocalDate.now() %>" required/>
 
-<hr>
+    <button type="submit">Search</button>
+</form>
 
-<!-- Train table -->
-<table id="trainTable" border="1">
+<!-- Train Table -->
+<table>
     <thead>
         <tr>
             <th>Train No</th>
             <th>Name</th>
             <th>Departure</th>
             <th>Arrival</th>
-            <th>Duration</th>
+            <th>Distance</th>
             <th>Seats</th>
             <th>Book</th>
         </tr>
     </thead>
+    <tbody>
+        <% if(trains != null && !trains.isEmpty()) {
+            for(Train t : trains) { %>
+                <tr>
+                    <td><%= t.getTrainNo() %></td>
+                    <td><%= t.getName() %></td>
+                    <td><%= t.getDepartureTime() %></td>
+                    <td><%= t.getArrivalTime() %></td>
+                    <td><%= t.getDuration() %></td>
+                    <td><%= t.getSeatsAvailable() %></td>
+                    <td><button onclick="alert('Booked <%= t.getTrainNo() %>')">Book</button></td>
+                </tr>
+        <%   } 
+           } else if(request.getParameter("from") != null) { %>
+                <tr><td colspan="7">No trains found</td></tr>
+        <% } %>
+    </tbody>
 </table>
 
-<script>
-function fetchTrains(){
-    var from = $('#fromStation').val();
-    var to = $('#toStation').val();
-    var date = $('#travelDate').val();
-
-    if(from === "" || to === "" || date === "") {
-        $('#trainTable tbody').remove();
-        return;
-    }
-
-    // Convert date to dd-MM-yyyy for API
-    var parts = date.split('-');
-    var apiDate = parts[2] + '-' + parts[1] + '-' + parts[0];
-
-    $.ajax({
-        url: 'LiveUpdateServlet',
-        type: 'GET',
-        data: { from: from, to: to, date: apiDate },
-        dataType: 'json',
-        success: function(trains){
-            $('#trainTable tbody').remove();
-            var tbody = $('<tbody></tbody>');
-
-            if(!trains || trains.length === 0){
-                tbody.append('<tr><td colspan="7">No trains found.</td></tr>');
-            } else {
-                $.each(trains, function(i, t){
-                    tbody.append(
-                        '<tr>'+
-                            '<td>'+t.trainNo+'</td>'+
-                            '<td>'+t.name+'</td>'+
-                            '<td>'+t.departureTime+'</td>'+
-                            '<td>'+t.arrivalTime+'</td>'+
-                            '<td>'+t.duration+'</td>'+
-                            '<td>'+t.seatsAvailable+'</td>'+
-                            '<td>'+
-                                '<input type="number" id="seats_'+t.trainNo+'" value="1" min="1" max="'+t.seatsAvailable+'">'+
-                                '<button onclick="bookTrain(\''+t.trainNo+'\')">Book</button>'+
-                            '</td>'+
-                        '</tr>'
-                    );
-                });
-            }
-
-            $('#trainTable').append(tbody);
-        },
-        error: function(err){
-            console.error('Error fetching trains:', err);
-            $('#trainTable tbody').remove();
-            $('#trainTable').append('<tbody><tr><td colspan="7">Error fetching data</td></tr></tbody>');
-        }
-    });
-}
-
-function bookTrain(trainNo){
-    var seats = $('#seats_' + trainNo).val();
-    var date = $('#travelDate').val();
-    if(!seats || seats < 1){
-        alert('Enter valid number of seats');
-        return;
-    }
-
-    $.post('BookTrain', { trainNo: trainNo, seats: seats, date: date }, function(response){
-        alert(response);
-        fetchTrains();
-    });
-}
-</script>
 </body>
 </html>

@@ -115,11 +115,7 @@ body {
     border-right: 1px solid #ccc;
 }
 
-/* Results */
-.results {
-    width: 75%;
-    padding: 15px;
-}
+
 .train-card {
     background: #fff;
     margin-bottom: 15px;
