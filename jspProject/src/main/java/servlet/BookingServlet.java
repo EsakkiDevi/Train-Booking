@@ -1,63 +1,64 @@
 package servlet;
 
+import dao.Bookingdao;
 import dao.Traindao;
 import db.database;
+import model.Booking;
 
-import javax.servlet.ServletException;
+import javax.servlet.*;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 
-@WebServlet("/BookTrain")
+@WebServlet("/BookingServlet")
 public class BookingServlet extends HttpServlet {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        request.setCharacterEncoding("UTF-8");
-        response.setContentType("text/plain");
-
-        String trainNo = request.getParameter("trainNo");       // Train number from dashboard
-        String dateStr = request.getParameter("date");          // Travel date
-        int seats = Integer.parseInt(request.getParameter("seats")); // Number of seats
-
-        // Get logged-in user ID from session
-        Integer userId = (Integer) request.getSession().getAttribute("userId");
-
-        if (trainNo == null || dateStr == null || seats <= 0 || userId == null) {
-            response.getWriter().print("Invalid booking request!");
+        HttpSession session = request.getSession(false);
+        if(session == null || session.getAttribute("username") == null){
+            response.sendRedirect("login.jsp");
             return;
         }
 
+        String username = (String) session.getAttribute("username");
+        String trainNo = request.getParameter("trainNo");
+        String quota = request.getParameter("quota");
+        int seats = Integer.parseInt(request.getParameter("seats"));
+
         try (Connection con = database.getConnection()) {
 
-            // 1️⃣ Reduce seats in DB (optional local tracking)
-            new Traindao(con).reduceSeats(trainNo, seats);
+            Traindao trainDao = new Traindao(con);
+            Bookingdao bookingDao = new Bookingdao(con);
 
-            // 2️⃣ Insert booking record
-            PreparedStatement ps = con.prepareStatement(
-                "INSERT INTO booking(user_id, train_no, travel_date, seats_booked) VALUES(?,?,?,?)"
-            );
-            ps.setInt(1, userId);
-            ps.setString(2, trainNo);
-            ps.setDate(3, java.sql.Date.valueOf(dateStr));
-            ps.setInt(4, seats);
-            ps.executeUpdate();
-            ps.close();
+            // Check & update seats
+            if(trainDao.updateSeats(trainNo, seats)) {
 
-            response.getWriter().print("Booking successful!");
+                // Create booking object
+                Booking booking = new Booking();
+                booking.setUsername(username);
+                booking.setTrainNo(trainNo);
+                booking.setSeatsBooked(seats);
+                booking.setQuota(quota);
+                booking.setPaymentStatus("Paid");
 
-        } catch (Exception e) {
+                if(bookingDao.addBooking(booking)) {
+                    request.setAttribute("message", "✅ Booking Successful for Train " + trainNo);
+                } else {
+                    request.setAttribute("message", "❌ Booking failed while saving record!");
+                }
+            } else {
+                request.setAttribute("message", "❌ Not enough seats available!");
+            }
+
+        } catch(Exception e){
             e.printStackTrace();
-            response.getWriter().print("Booking failed! Try again.");
+            request.setAttribute("message", "❌ Server error occurred!");
         }
-    }
 
-    // Optional: handle GET for testing
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        response.getWriter().print("BookingServlet is running. Use POST to book.");
+        // Forward to confirmation page
+        request.getRequestDispatcher("booking-confirmation.jsp").forward(request, response);
     }
 }
