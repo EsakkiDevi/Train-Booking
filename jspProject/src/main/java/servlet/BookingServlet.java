@@ -1,64 +1,40 @@
 package servlet;
 
-import dao.Bookingdao;
-import dao.Traindao;
-import db.database;
-import model.Booking;
-
-import javax.servlet.*;
+import java.io.IOException;
+import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
-import java.io.IOException;
-import java.sql.Connection;
+
+import dao.Bookingdao;
+import dao.Traindao;
+import model.Booking;
 
 @WebServlet("/BookingServlet")
 public class BookingServlet extends HttpServlet {
-
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-        HttpSession session = request.getSession(false);
-        if(session == null || session.getAttribute("username") == null){
-            response.sendRedirect("login.jsp");
-            return;
-        }
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        HttpSession session = req.getSession();
 
         String username = (String) session.getAttribute("username");
-        String trainNo = request.getParameter("trainNo");
-        String quota = request.getParameter("quota");
-        int seats = Integer.parseInt(request.getParameter("seats"));
+        int trainNo = Integer.parseInt(req.getParameter("trainNo"));
+        String trainName = req.getParameter("trainName");
+        String source = req.getParameter("source");
+        String destination = req.getParameter("destination");
+        String departure = req.getParameter("departure");
+        String arrival = req.getParameter("arrival");
+        int seats = Integer.parseInt(req.getParameter("seats"));
+        String quota = req.getParameter("quota");
+        double fare = Double.parseDouble(req.getParameter("fare"));
+        double totalFare = fare * seats;
 
-        try (Connection con = database.getConnection()) {
+        Booking b = new Booking(username, trainNo, trainName, source, destination, departure, arrival, seats, quota, totalFare);
 
-            Traindao trainDao = new Traindao(con);
-            Bookingdao bookingDao = new Bookingdao(con);
-
-            // Check & update seats
-            if(trainDao.updateSeats(trainNo, seats)) {
-
-                // Create booking object
-                Booking booking = new Booking();
-                booking.setUsername(username);
-                booking.setTrainNo(trainNo);
-                booking.setSeatsBooked(seats);
-                booking.setQuota(quota);
-                booking.setPaymentStatus("Paid");
-
-                if(bookingDao.addBooking(booking)) {
-                    request.setAttribute("message", "✅ Booking Successful for Train " + trainNo);
-                } else {
-                    request.setAttribute("message", "❌ Booking failed while saving record!");
-                }
-            } else {
-                request.setAttribute("message", "❌ Not enough seats available!");
-            }
-
-        } catch(Exception e){
-            e.printStackTrace();
-            request.setAttribute("message", "❌ Server error occurred!");
+        Bookingdao dao = new Bookingdao();
+        if (dao.saveBooking(b)) {
+            // update available seats
+            try { new Traindao().updateSeats(trainNo, seats); } catch (Exception e) { e.printStackTrace(); }
+            resp.sendRedirect("payment.jsp");
+        } else {
+            resp.getWriter().println("Booking failed!");
         }
-
-        // Forward to confirmation page
-        request.getRequestDispatcher("booking-confirmation.jsp").forward(request, response);
     }
 }

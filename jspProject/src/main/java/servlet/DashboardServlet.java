@@ -1,65 +1,64 @@
 package servlet;
 
-import dao.Stationsdao;
-import dao.Traindao;
-import model.Station;
-import model.Train;
-import db.database;
-
-import javax.servlet.*;
+import java.io.IOException;
+import java.util.List;
+import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
-import java.io.IOException;
-import java.sql.Connection;
-import java.util.List;
+
+import dao.Traindao;
+import dao.Stationsdao;
+import model.Train;
+import model.Station;
 
 @WebServlet("/DashboardServlet")
 public class DashboardServlet extends HttpServlet {
+	 protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	        HttpSession session = req.getSession();
+	        String username = (String) session.getAttribute("username");
+	        if(username == null) { 
+	            resp.sendRedirect("login.jsp"); 
+	            return; 
+	        }
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+	        Stationsdao sdao = new Stationsdao();
+	        List<Station> stations = sdao.getAllStations();
+	        req.setAttribute("stations", stations);
 
-        // Fetch all stations for dropdown
-        Stationsdao sdao = new Stationsdao();
-        List<Station> stations = sdao.getAllStations();
-        request.setAttribute("stations", stations);
+	        Traindao tdao = new Traindao();
+	        List<Train> trains = tdao.getAllTrains(); // Show all trains initially
+	        req.setAttribute("trains", trains);
 
-        // Forward to JSP
-        request.getRequestDispatcher("dashboard.jsp").forward(request, response);
-    }
+	        req.getRequestDispatcher("dashboard.jsp").forward(req, resp);
+	    }
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-        String from = request.getParameter("from");
-        String to = request.getParameter("to");
-
-        // Fetch stations for dropdown again (so they remain after form submission)
-        Stationsdao sdao = new Stationsdao();
-        List<Station> stations = sdao.getAllStations();
-        request.setAttribute("stations", stations);
-
-        // Validate input
-        if (from == null || from.isEmpty() || to == null || to.isEmpty()) {
-            request.setAttribute("errorMsg", "Please select both From and To stations.");
-        } else {
-            // Fetch trains from DB
-            try (Connection con = database.getConnection()) {
-                Traindao tdao = new Traindao(con);
-                List<Train> trains = tdao.getTrainsBySourceDest(from, to);
-                request.setAttribute("trains", trains);
-                if (trains.isEmpty()) {
-                    request.setAttribute("errorMsg", "No trains found for selected route.");
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                request.setAttribute("errorMsg", "Error fetching trains. Please try again later.");
-            }
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        HttpSession session = req.getSession();
+        String username = (String) session.getAttribute("username");
+        if(username == null) { 
+            resp.sendRedirect("login.jsp"); 
+            return; 
         }
 
-        // Forward to JSP
-        request.getRequestDispatcher("dashboard.jsp").forward(request, response);
+        String from = req.getParameter("from");
+        String to = req.getParameter("to");
+        String travelDate = req.getParameter("travelDate");
+
+        Stationsdao sdao = new Stationsdao();
+        List<Station> stations = sdao.getAllStations();
+        req.setAttribute("stations", stations);
+
+        if(from == null || to == null || from.equals(to)) {
+            req.setAttribute("errorMsg", "Please select valid From and To stations.");
+        } else {
+            // Fetch trains from DB using station codes
+            Traindao tdao = new Traindao();
+            List<Train> trains = tdao.searchTrains(from, to);
+            req.setAttribute("trains", trains);
+        }
+
+        req.getRequestDispatcher("dashboard.jsp").forward(req, resp);
     }
+
+   
 }
