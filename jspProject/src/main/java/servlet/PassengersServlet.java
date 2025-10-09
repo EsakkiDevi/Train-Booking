@@ -15,14 +15,14 @@ public class PassengersServlet extends HttpServlet {
         String username = req.getParameter("username");
         String trainNoStr = req.getParameter("trainNo");
         String quota = req.getParameter("quota");
-        String seatsStr = req.getParameter("seats");
+       int seatsStr = Integer.parseInt(req.getParameter("seats"));
         String passengerName = req.getParameter("passengerName");
         String ageStr = req.getParameter("age");
         String gender = req.getParameter("gender");
 
         // Convert numeric values safely
         int trainNo = trainNoStr != null ? Integer.parseInt(trainNoStr) : 0;
-        int seats = seatsStr != null ? Integer.parseInt(seatsStr) : 0;
+        int seats = seatsStr != 0 ? seatsStr : 0;
         int age = ageStr != null ? Integer.parseInt(ageStr) : 0;
 
         // Save details in session for next step (Payment)

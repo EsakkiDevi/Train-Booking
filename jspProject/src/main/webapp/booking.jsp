@@ -1,65 +1,67 @@
-<%@ page session="true" %>
-<%
-String username = (String) session.getAttribute("username");
-if(username == null){ response.sendRedirect("login.jsp"); return; }
-
-String trainNo = request.getParameter("trainNo");
-String trainName = request.getParameter("trainName");
-String source = request.getParameter("source");
-String destination = request.getParameter("destination");
-String departure = request.getParameter("departure");
-String arrival = request.getParameter("arrival");
-String seatsAvailable = request.getParameter("seatsAvailable");
-%>
-
-<html>
-<head>
-<title>Passenger Details</title>
-<link rel="stylesheet" href="styles/booking.css">
-</head>
-<body>
-<div class="container">
-<h2>Enter Passenger Details</h2>
-<form action="PassengerServlet" method="post">
-  <input type="hidden" name="trainNo" value="<%= trainNo %>">
-  <input type="hidden" name="trainName" value="<%= trainName %>">
-  <input type="hidden" name="source" value="<%= source %>">
-  <input type="hidden" name="destination" value="<%= destination %>">
-  <input type="hidden" name="departure" value="<%= departure %>">
-  <input type="hidden" name="arrival" value="<%= arrival %>">
-  <input type="hidden" name="seatsAvailable" value="<%= seatsAvailable %>">
-  <input type="hidden" name="username" value="<%= username %>">
-
-  <label>Class:</label>
-  <select name="trainClass" required>
-    <option value="Sleeper">Sleeper</option>
-    <option value="3A">3A</option>
-    <option value="2A">2A</option>
-    <option value="1A">1A</option>
-  </select>
-
-  <label>Quota:</label>
-  <select name="quota" required>
-    <option value="General">General</option>
-    <option value="Tatkal">Tatkal</option>
-    <option value="Ladies">Ladies</option>
-  </select>
-
-  <label>No of Passengers:</label>
-  <input type="number" name="seats" min="1" max="<%= seatsAvailable %>" required>
-
-  <h3>Passenger Info</h3>
-  <div>
-    <input type="text" name="passengerName" placeholder="Name" required>
-    <input type="number" name="age" placeholder="Age" required>
-    <select name="gender">
-      <option>Male</option>
-      <option>Female</option>
-    </select>
-  </div>
-
-  <button type="submit">Proceed to Payment</button>
-</form>
-</div>
-</body>
-</html>
+<%@ page import="dao.Stationsdao,model.Station,java.util.*" %> 
+<% Stationsdao dao = new Stationsdao(); 
+List<Station> stations = dao.getAllStations(); %> 
+<html> 
+<head> 
+<title>Book Ticket</title> 
+<style> 
+body 
+{ 
+font-family: 'Segoe UI', sans-serif; 
+background: #f4f6f9; 
+display: flex; 
+justify-content: center; 
+align-items: center; height: 100vh; 
+} 
+form
+ { 
+ background: #fff; 
+ padding: 30px 40px; 
+ border-radius: 10px; 
+ box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+ } 
+ h2
+  { 
+  text-align: center; 
+  color: #333; 
+  } 
+  select, input[type=date], input[type=submit] 
+  { 
+  width: 100%; 
+  padding: 10px; 
+  margin: 10px 0; 
+  border: 1px solid #ccc; 
+  border-radius: 6px; 
+  } 
+  input[type=submit] 
+  { 
+  background: #5563DE; 
+  color: #fff; 
+  border: none; 
+  cursor: pointer; 
+  font-weight: bold; 
+  } 
+  input[type=submit]:hover 
+  { 
+  background: #3b4cc0; 
+  } 
+  </style> 
+  </head> 
+  <body> 
+  <form action="TrainServlet" method="post"> 
+  <h2>Search Trains</h2> 
+  <label>From:</label> 
+  <select name="from"> 
+  <% for(Station s: stations){ %> 
+  <option value="<%=s.getStncode()%>"><%=s.getStnname()%></option> <% } %> 
+  </select> 
+  <label>To:</label> 
+  <select name="to"> <% for(Station s: stations){ %> 
+  <option value="<%=s.getStncode()%>"><%=s.getStnname()%></option> <% } %> 
+  </select> 
+  <label>Date:</label> 
+  <input type="date" name="date" min="<%=java.time.LocalDate.now()%>"> 
+  <input type="submit" value="Search"> 
+  </form> 
+  </body> 
+  </html>
