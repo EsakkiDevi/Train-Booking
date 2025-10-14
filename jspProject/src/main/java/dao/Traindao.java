@@ -5,6 +5,35 @@ import model.Train;
 import db.database; 
 public class Traindao 
 { // Fetch trains by source and destination 
+	
+	 public Train getTrainByNo(String trainNo) {
+	        Train train = null;
+	        String sql = "SELECT * FROM trains WHERE train_no = ?"; // adjust table/column names
+
+	        try (Connection con = database.getConnection();
+	             PreparedStatement ps = con.prepareStatement(sql)) {
+
+	            ps.setString(1, trainNo);
+	            ResultSet rs = ps.executeQuery();
+
+	            if (rs.next()) {
+	                train = new Train();
+	                train.setTrainNo(rs.getString("train_no"));
+	                train.setName(rs.getString("name"));
+	                train.setSource(rs.getString("source"));
+	                train.setDestination(rs.getString("destination"));
+	                train.setDepartureTime(rs.getString("departure_time"));
+	                train.setArrivalTime(rs.getString("arrival_time"));
+	                train.setDuration(rs.getString("duration"));
+	                // add other fields if needed
+	            }
+
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	        }
+
+	        return train;
+	    }  
 	public List<Train> getTrains(String source, String destination) 
 	{ 
 		List<Train> list = new ArrayList<>(); 

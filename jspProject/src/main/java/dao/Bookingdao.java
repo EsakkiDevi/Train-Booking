@@ -28,6 +28,22 @@ public class Bookingdao
 			} 
 		return id; 
 		} 
+	 public boolean updatePaymentStatus(int bookingId, String status) 
+	 { 
+		 String sql = "UPDATE bookings SET payment_status=? WHERE booking_id=?";
+
+		 try (Connection con = database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) 
+		 { 
+			 ps.setString(1, status); 
+			 ps.setInt(2, bookingId); 
+			 return ps.executeUpdate() > 0; 
+			 } 
+		 catch (Exception e) 
+		 { 
+			 e.printStackTrace(); 
+			 return false; 
+			 } 
+		 }
 	public List<Booking> getBookingsByUser(String username) 
 	{ 
 		List<Booking> list = new ArrayList<>(); 

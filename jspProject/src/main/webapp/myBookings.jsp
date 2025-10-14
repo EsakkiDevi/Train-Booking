@@ -48,7 +48,7 @@ background: #f1f3ff;
 <% for(Booking b: bookings){ %> 
 <tr> 
 <td><%=b.getBookingId()%></td> <
-td><%=b.getTrainNo()%></td> 
+<td><%=b.getTrainNo()%></td> 
 <td><%=b.getSeatsBooked()%></td> 
 <td><%=b.getQuota()%></td> 
 <td><%=b.getPaymentStatus()%></td> 

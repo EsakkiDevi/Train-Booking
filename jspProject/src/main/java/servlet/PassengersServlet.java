@@ -12,30 +12,31 @@ public class PassengersServlet extends HttpServlet {
             throws ServletException, IOException {
 
         // Read form parameters
-        String username = req.getParameter("username");
-        String trainNoStr = req.getParameter("trainNo");
+    	 // Read train & booking info from BookTrain.jsp
+        String trainNo = req.getParameter("trainNo");
+        String seats = req.getParameter("seats");
         String quota = req.getParameter("quota");
-       int seatsStr = Integer.parseInt(req.getParameter("seats"));
-        String passengerName = req.getParameter("passengerName");
-        String ageStr = req.getParameter("age");
-        String gender = req.getParameter("gender");
+        String classType = req.getParameter("class");
 
-        // Convert numeric values safely
-        int trainNo = trainNoStr != null ? Integer.parseInt(trainNoStr) : 0;
-        int seats = seatsStr != 0 ? seatsStr : 0;
-        int age = ageStr != null ? Integer.parseInt(ageStr) : 0;
+        // Read passenger arrays from BookTrain.jsp
+        String[] names = req.getParameterValues("pname");
+        String[] ages = req.getParameterValues("page");
+        String[] genders = req.getParameterValues("pgender");
+        String[] categories = req.getParameterValues("pcategory");
 
-        // Save details in session for next step (Payment)
-        HttpSession session = req.getSession();
-        session.setAttribute("username", username);
-        session.setAttribute("trainNo", trainNo);
-        session.setAttribute("seats", seats);
-        session.setAttribute("quota", quota);
-        session.setAttribute("passengerName", passengerName);
-        session.setAttribute("age", age);
-        session.setAttribute("gender", gender);
+        // Store all data as request attributes to forward to Payment.jsp
+        req.setAttribute("trainNo", trainNo);
+        req.setAttribute("seats", seats);
+        req.setAttribute("quota", quota);
+        req.setAttribute("class", classType);
 
-        // Forward to payment page
-        req.getRequestDispatcher("payment.jsp").forward(req, resp);
+        req.setAttribute("pname", names);
+        req.setAttribute("page", ages);
+        req.setAttribute("pgender", genders);
+        req.setAttribute("pcategory", categories);
+
+        // Forward to Payment.jsp
+        RequestDispatcher rd = req.getRequestDispatcher("payment.jsp");
+        rd.forward(req, resp);
     }
 }
